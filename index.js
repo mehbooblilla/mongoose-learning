@@ -1,9 +1,22 @@
 const express = require("express");
 require("./config");
+const multer = require("multer");
 const Product = require("./products");
 
 const app = express();
 app.use(express.json());
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, "uploads");
+    },
+    filename: function (req, file, cb) {
+      console.log(file),
+      cb(null, file.originalname+".jpg");
+    },
+  })
+}).single('user_file');
 
 //CREATE API
 app.post("/createProduct", async (req, res) => {
@@ -36,24 +49,27 @@ app.delete("/delete/:_id", async (req, res) => {
 //Update API
 app.put("/update/:_id", async (req, res) => {
   let data = await Product.updateOne(req.params, {
-    $set:req.body,
+    $set: req.body,
   });
 
   res.send(data);
 });
 //SEARCH API
 app.get("/search/:key", async (req, res) => {
-    let data = await Product.find(
-        {
-            '$or':[
-                {
-                    "name":{$regex:req.params.key}
-                }
-            ]
-        }
-    );
-  
-    res.send(data);
+  let data = await Product.find({
+    $or: [
+      {
+        name: { $regex: req.params.key },
+      },
+    ],
   });
+
+  res.send(data);
+});
+
+// Upload File API
+app.post("/upload",upload, (req, res) => {
+  res.send("file upload");
+});
 
 app.listen(5001);
